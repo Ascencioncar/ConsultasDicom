@@ -1,11 +1,11 @@
 import streamlit as st
 from datetime import date
 import re
-import openpyxl
+from datetime import datetime
 from pydicom.dataset import Dataset
 from pynetdicom import AE
 from pynetdicom.sop_class import StudyRootQueryRetrieveInformationModelFind
-
+import psycopg2
 # ─────────────────────────────────────────────
 # Configuraciones del PACS (personaliza esto)
 # ─────────────────────────────────────────────
@@ -57,24 +57,37 @@ if ejecutar:
 
         assoc.release()
 
-        if data:
-            st.success(f" Se encontraron {len(data)} estudio(s) RX con letras en el UID.")
-            st.table(data)
+try:
+    # Conectar a PostgreSQL
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        port=DB_PORT
+    )
+    cursor = conn.cursor()
 
-            # Guardar Excel
-            wb = openpyxl.Workbook()
-            ws = wb.active
-            ws.title = "Estudios_RX"
-            ws.append(["StudyInstanceUID", "PatientID", "PatientName","StudyDate"])
-            for row in data:
-                ws.append(row)
+    # Insertar cada fila
+    for uid, patient_id, patient_name, study_date in data:
+        try:
+            cursor.execute("""
+                INSERT INTO estudios_rx (paciente, fecha, uid, patientid)
+                VALUES (%s, %s, %s, %s)
+            """, (
+                patient_name,
+                datetime.strptime(study_date, "%Y%m%d").date() if study_date.isdigit() else None,
+                uid,
+                patient_id
+            ))
+        except Exception as e:
+            st.warning(f"⚠️ Error al insertar UID {uid}: {e}")
 
-            excel_path = "resultados_estudios_rx.xlsx"
-            wb.save(excel_path)
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-            with open(excel_path, "rb") as f:
-                st.download_button(" Descargar Excel", f, file_name="estudios_rx.xlsx")
-        else:
-            st.warning("No se encontraron estudios RX con letras en el UID.")
-    else:
-        st.error("No se pudo establecer conexión con el PACS.")
+    st.success("✅ Datos guardados en la base de datos PostgreSQL correctamente.")
+
+except Exception as e:
+    st.error(f"❌ Error al conectar a la base de datos: {e}")
