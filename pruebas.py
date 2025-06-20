@@ -1,7 +1,7 @@
 import psycopg2
 from datetime import datetime
 
-# Configuración PostgreSQL (ajústalo a tu servidor)
+# Configuración PostgreSQL 
 DB_HOST = "localhost"
 DB_NAME = "rxmalos"
 DB_USER = "root"
