@@ -5,5 +5,5 @@ from datetime import datetime
 DB_HOST = "localhost"
 DB_NAME = "rxmalos"
 DB_USER = "root"
-DB_PASSWORD = "1001561031"
+DB_PASSWORD = ""
 DB_PORT = "5432"  # usualmente es 5432
