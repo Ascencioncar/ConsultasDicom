@@ -7,4 +7,4 @@ CREATE TABLE rxmalos (
     patientid VARCHAR(64)
 );
 
-
+select * from rxmalos;
